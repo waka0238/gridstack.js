@@ -65,7 +65,6 @@ export class DDResizable extends DDBaseImplement implements HTMLElementExtendOpt
     // create var event binding so we can easily remove and still look like TS methods (unlike anonymous functions)
     this._mouseOver = this._mouseOver.bind(this);
     this._mouseOut = this._mouseOut.bind(this);
-    this._click = this._click.bind(this);
     this.enable();
     this._setupAutoHide(this.option.autoHide);
     this._setupHandlers();
@@ -120,26 +119,16 @@ export class DDResizable extends DDBaseImplement implements HTMLElementExtendOpt
       // use mouseover and not mouseenter to get better performance and track for nested cases
       this.el.addEventListener('mouseover', this._mouseOver);
       this.el.addEventListener('mouseout', this._mouseOut);
-      this.el.addEventListener('click', this._click);
     } else {
       this.el.classList.remove('ui-resizable-autohide');
       this.el.classList.remove('ui-trash-autohide');
       this.el.removeEventListener('mouseover', this._mouseOver);
       this.el.removeEventListener('mouseout', this._mouseOut);
-      this.el.removeEventListener('click', this._click);      
       if (DDManager.overResizeElement === this) {
         delete DDManager.overResizeElement;
       }
     }
     return this;
-  }
-
-  protected _click(e: Event): void {
-    e.stopPropagation();
-    this.el.classList.add('ui-selected');
-    this.el.classList.remove('ui-resizable-autohide');
-    this.el.classList.remove('ui-trash-autohide');
-    console.log('_onClick');
   }
 
   /** @internal */
@@ -150,6 +139,11 @@ export class DDResizable extends DDBaseImplement implements HTMLElementExtendOpt
     if (DDManager.overResizeElement || DDManager.dragElement) return;
     DDManager.overResizeElement = this;
     // console.log(`${count++} enter ${(this.el as GridItemHTMLElement).gridstackNode._id}`)
+
+    // 点線表示
+    if(!this.el.classList.contains('ui-selected')){
+      this.el.classList.add('ui-hover-border');
+    }
   }
 
   /** @internal */
@@ -159,6 +153,9 @@ export class DDResizable extends DDBaseImplement implements HTMLElementExtendOpt
     if (DDManager.overResizeElement !== this) return;
     delete DDManager.overResizeElement;
     // console.log(`${count++} leave ${(this.el as GridItemHTMLElement).gridstackNode._id}`)
+
+    // 点線消す
+    this.el.classList.remove('ui-hover-border');
   }
 
   /** @internal */

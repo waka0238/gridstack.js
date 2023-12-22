@@ -155,3 +155,27 @@ $animation_speed: .3s !default;
 .gs-1 > .grid-stack-item {
   width: 100%;
 }
+
+
+// 追加したUI関係の見た目を調整
+.fa-trash {
+  position: absolute;
+  right: 12px;
+  top: 5px;
+  cursor: pointer;
+}
+
+.grid-stack-item.ui-trash-autohide > .ui-trash-handle, .grid-stack-item.ui-trash-disabled > .ui-trash-handle {
+  display: none;
+}
+
+/* パーツが選択された時の線 */
+.ui-selected {
+  box-sizing: border-box;
+  border: 2px solid #157dffc4;
+}
+
+.ui-hover-border {
+  box-sizing: border-box;
+  border: 2px dashed #157dffc4; /* 点線の枠線 */
+}

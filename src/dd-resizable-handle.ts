@@ -53,6 +53,8 @@ export class DDResizableHandle {
     const icon = document.createElement('i');
     icon.classList.add('fa-solid', 'fa-trash', 'text-danger', 'ui-trash-handle');
     icon.setAttribute('onclick', 'removeWidget(this.parentElement)');
+    icon.style.zIndex = '100';
+    icon.style.userSelect = 'none';
     this.host.appendChild(icon);
     icon.addEventListener('mousedown', this._mouseDown);
 

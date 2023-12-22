@@ -107,6 +107,17 @@ export class GridStack {
     if (!el.gridstack) {
       el.gridstack = new GridStack(el, Utils.cloneDeep(options));
     }
+
+    // パーツがクリックされたら選択状態にする、グリッドがクリックされたら選択状態を解除する
+    el.addEventListener('click', function(e: PointerEvent) {
+      const target = (e.target as HTMLElement).closest('.grid-stack-item') as HTMLElement;      
+      if (target) {
+        Utils.GridItemSelectedUI(target);
+      } else {
+        Utils.GridItemSelectedRelease();
+      }
+    });
+
     return el.gridstack
   }
 
@@ -1131,8 +1142,26 @@ export class GridStack {
       return this;
     }
 
+    // addedとchangeイベントのデフォルト処理を定義
+    if (name === 'added' || name === 'change') {
+      const defaultAddedHandler = (event: CustomEvent) => {
+        Utils.GridItemSelectedUI(event.detail[0].el);
+        console.log(name, this);
+
+        // ユーザーが定義したイベントを呼び出す
+        if (callback) {
+          (callback as GridStackNodesHandler)(event, event.detail);
+        }
+      };
+
+      // デフォルトのイベントハンドラを登録
+      this._gsEventHandler[name] = defaultAddedHandler;
+      this.el.addEventListener(name, this._gsEventHandler[name]);
+      return this;
+    }
+
     // native CustomEvent handlers - cash the generic handlers so we can easily remove
-    if (name === 'change' || name === 'added' || name === 'removed' || name === 'enable' || name === 'disable') {
+    if (name === 'removed' || name === 'enable' || name === 'disable') {
       let noData = (name === 'enable' || name === 'disable');
       if (noData) {
         this._gsEventHandler[name] = (event: Event) => (callback as GridStackEventHandler)(event);

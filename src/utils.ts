@@ -554,6 +554,30 @@ export class Utils {
     (target || e.target).dispatchEvent(simulatedEvent);
   }
 
+  // 要素の選択状態を解除
+  public static GridItemSelectedRelease(){
+    document.querySelectorAll('.ui-selected').forEach(el => {
+      el.classList.remove('ui-selected');
+      el.classList.add('ui-resizable-autohide');
+      el.classList.add('ui-trash-autohide');
+    });
+  }
+
+  // 要素を選択状態にする
+  public static GridItemSelectedUI(el: HTMLElement){
+    // すべての 'ui-selected' クラスを持つ要素からクラスを削除
+    document.querySelectorAll('.ui-selected').forEach(el => {
+      el.classList.remove('ui-selected');
+      el.classList.add('ui-resizable-autohide');
+      el.classList.add('ui-trash-autohide');
+    });
+
+    el.classList.add('ui-selected');
+    el.classList.remove('ui-resizable-autohide');
+    el.classList.remove('ui-trash-autohide');
+    el.classList.remove('ui-hover-border');
+  }
+
   /** returns true if event is inside the given element rectangle */
   // Note: Safari Mac has null event.relatedTarget which causes #1684 so check if DragEvent is inside the coordinates instead
   //    this.el.contains(event.relatedTarget as HTMLElement)
