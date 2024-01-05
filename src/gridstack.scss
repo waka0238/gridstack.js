@@ -171,14 +171,12 @@ $animation_speed: .3s !default;
 
 /* パーツが選択された時の線 */
 .ui-selected {
-  box-sizing: border-box;
-  border: 2px solid #157dffc4;
-  border-radius: 5px;
+  border: 2px solid #157dffc4 !important;
+  border-radius: 5px !important;
 }
 
 /* パーツにホバー時の点線 */
 .ui-hover-border {
-  box-sizing: border-box;
-  border: 2px dashed #157dffc4;
-  border-radius: 5px;
+  border: 2px dashed #157dffc4 !important;
+  border-radius: 5px !important;
 }
