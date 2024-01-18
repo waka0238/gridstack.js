@@ -48,20 +48,8 @@ export class DDResizableHandle {
     el.style.userSelect = 'none';
     this.el = el;
     this.host.appendChild(this.el);
-
-    // 削除ボタン要素を追加
-    const icon = document.createElement('i');
-    icon.classList.add('fa-solid', 'fa-trash', 'text-danger', 'ui-trash-handle');
-    icon.setAttribute('onclick', 'removeWidget(this.parentElement)');
-    icon.style.zIndex = '100';
-    icon.style.userSelect = 'none';
-    this.host.appendChild(icon);
-    icon.addEventListener('mousedown', this._mouseDown);
-
     this.el.addEventListener('mousedown', this._mouseDown);
     if (isTouch) {
-      icon.addEventListener('touchstart', touchstart);
-      icon.addEventListener('pointerdown', pointerdown);
       this.el.addEventListener('touchstart', touchstart);
       this.el.addEventListener('pointerdown', pointerdown);
       // this.el.style.touchAction = 'none'; // not needed unlike pointerdown doc comment

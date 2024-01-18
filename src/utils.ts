@@ -559,7 +559,7 @@ export class Utils {
     document.querySelectorAll('.ui-selected').forEach(el => {
       el.classList.remove('ui-selected');
       el.classList.add('ui-resizable-autohide');
-      el.classList.add('ui-trash-autohide');
+      el.classList.add('ui-custom-autohide');
     });
   }
 
@@ -569,12 +569,12 @@ export class Utils {
     document.querySelectorAll('.ui-selected').forEach(el => {
       el.classList.remove('ui-selected');
       el.classList.add('ui-resizable-autohide');
-      el.classList.add('ui-trash-autohide');
+      el.classList.add('ui-custom-autohide');
     });
 
     el.classList.add('ui-selected');
     el.classList.remove('ui-resizable-autohide');
-    el.classList.remove('ui-trash-autohide');
+    el.classList.remove('ui-custom-autohide');
     el.classList.remove('ui-hover-border');
   }
 

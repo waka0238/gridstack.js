@@ -156,19 +156,6 @@ $animation_speed: .3s !default;
   width: 100%;
 }
 
-
-// 追加したUI関係の見た目を調整
-.fa-trash {
-  position: absolute;
-  right: 12px;
-  top: 5px;
-  cursor: pointer;
-}
-
-.grid-stack-item.ui-trash-autohide > .ui-trash-handle, .grid-stack-item.ui-trash-disabled > .ui-trash-handle {
-  display: none;
-}
-
 /* パーツが選択された時の線 */
 .ui-selected {
   border: 2px solid #157dffc4 !important;
