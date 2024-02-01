@@ -25,7 +25,7 @@
     }
   ],
   "scripts": {
-    "build": "yarn --no-progress && yarn build:ng && grunt && yarn build:es6 && yarn build:es5 && yarn doc",
+    "build": "yarn --no-progress && yarn build:ng && grunt && yarn build:es6 && yarn build:es5 && yarn doc && npm run copy-file",
     "build:es6": "webpack && tsc --stripInternal",
     "build:es5": "webpack --config es5/webpack.config.js && tsc --stripInternal --project es5/tsconfig.json",
     "build:ng": "cd angular && yarn --no-progress && yarn build lib",
@@ -35,7 +35,8 @@
     "test": "yarn lint && karma start karma.conf.js",
     "lint": "tsc --noEmit && eslint src/*.ts",
     "reset": "rm -rf dist node_modules",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "yarn build",
+    "copy-file": "copy dist\\gridstack-all.js ..\\DesignMeetingSystem\\DesignMeetingSystem\\wwwroot\\lib\\gridstack\\gridstack-all.js && copy dist\\gridstack.min.css ..\\DesignMeetingSystem\\DesignMeetingSystem\\wwwroot\\lib\\gridstack\\gridstack.min.css"
   },
   "keywords": [
     "Typescript",
