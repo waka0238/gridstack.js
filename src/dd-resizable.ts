@@ -141,7 +141,7 @@ export class DDResizable extends DDBaseImplement implements HTMLElementExtendOpt
     // console.log(`${count++} enter ${(this.el as GridItemHTMLElement).gridstackNode._id}`)
 
     // 点線表示
-    if(!this.el.classList.contains('ui-selected')){
+    if(!this.el.classList.contains('ui-selected') && !this.el.classList.contains('preview')){
       this.el.classList.add('ui-hover-border');
     }
   }

@@ -110,10 +110,17 @@ export class GridStack {
 
     // パーツがクリックされたら選択状態にする、グリッドがクリックされたら選択状態を解除する
     el.addEventListener('click', function(e: PointerEvent) {
-      const target = (e.target as HTMLElement).closest('.grid-stack-item') as HTMLElement;      
-      if (target && !target.classList.contains('preview')) {
-        Utils.GridItemSelectedUI(target);
-      } else {
+      const target = (e.target as HTMLElement).closest('.grid-stack-item') as HTMLElement;
+      if(target){
+        if (!target.classList.contains('preview')) {
+          Utils.GridItemSelectedUI(target);
+        } else {
+          // グループのラベルパーツをクリックしたときは選択状態を解除しないようにする
+          if(!target.classList.contains('group-label-item')){
+            Utils.GridItemSelectedRelease();
+          }
+        }  
+      } else{
         Utils.GridItemSelectedRelease();
       }
     });
@@ -1146,7 +1153,7 @@ export class GridStack {
     if (name === 'added') {
       const defaultAddedHandler = (event: CustomEvent) => {
         Utils.GridItemSelectedUI(event.detail[0].el);
-        console.log(name, this);
+        //console.log(name, this);
 
         // ユーザーが定義したイベントを呼び出す
         if (callback) {
