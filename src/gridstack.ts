@@ -6,10 +6,10 @@
  * see root license https://github.com/gridstack/gridstack.js/tree/master/LICENSE
  */
 import { GridStackEngine } from './gridstack-engine';
-import { Utils, HeightData, obsolete } from './utils';
+import { Utils, HeightData, obsolete, DragTransform } from './utils';
 import { gridDefaults, ColumnOptions, GridItemHTMLElement, GridStackElement, GridStackEventHandlerCallback,
   GridStackNode, GridStackWidget, numberOrString, DDUIData, DDDragInOpt, GridStackPosition, GridStackOptions,
-  dragInDefaultOptions, GridStackEventHandler, GridStackNodesHandler, AddRemoveFcn, SaveFcn, CompactOptions, GridStackMoveOpts, ResizeToContentFcn } from './types';
+  dragInDefaultOptions, GridStackEventHandler, GridStackNodesHandler, AddRemoveFcn, SaveFcn, CompactOptions, GridStackMoveOpts, ResizeToContentFcn, GridStackDroppedHandler, GridStackElementHandler } from './types';
 
 /*
  * and include D&D by default
@@ -34,7 +34,7 @@ export interface GridHTMLElement extends HTMLElement {
 }
 /** list of possible events, or space separated list of them */
 export type GridStackEvent = 'added' | 'change' | 'disable' | 'drag' | 'dragstart' | 'dragstop' | 'dropped' |
-  'enable' | 'removed' | 'resize' | 'resizestart' | 'resizestop' | 'resizecontent' | string;
+  'enable' | 'removed' | 'resize' | 'resizestart' | 'resizestop' | 'resizecontent';
 
 /** Defines the coordinates of an object */
 export interface MousePosition {
@@ -94,6 +94,7 @@ export class GridStack {
    * let grid = document.querySelector('.grid-stack').gridstack;
    */
   public static init(options: GridStackOptions = {}, elOrString: GridStackElement = '.grid-stack'): GridStack {
+    if (typeof document === 'undefined') return null; // temp workaround SSR
     let el = GridStack.getGridElement(elOrString);
     if (!el) {
       if (typeof elOrString === 'string') {
@@ -139,6 +140,7 @@ export class GridStack {
    */
   public static initAll(options: GridStackOptions = {}, selector = '.grid-stack'): GridStack[] {
     let grids: GridStack[] = [];
+    if (typeof document === 'undefined') return grids; // temp workaround SSR
     GridStack.getGridElements(selector).forEach(el => {
       if (!el.gridstack) {
         el.gridstack = new GridStack(el, Utils.cloneDeep(options));
@@ -277,6 +279,8 @@ export class GridStack {
   protected _extraDragRow = 0;
   /** @internal true if nested grid should get column count from our width */
   protected _autoColumn?: boolean;
+  /** @internal meant to store the scale of the active grid */
+  protected dragTransform: DragTransform = { xScale: 1, yScale: 1, xOffset: 0, yOffset: 0 };
   private _skipInitialResize: boolean;
 
   /**
@@ -530,6 +534,7 @@ export class GridStack {
    * @param el gridItem element to convert
    * @param ops (optional) sub-grid options, else default to node, then parent settings, else defaults
    * @param nodeToAdd (optional) node to add to the newly created sub grid (used when dragging over existing regular item)
+   * @param saveContent if true (default) the html inside .grid-stack-content will be saved to child widget
    * @returns newly created grid
    */
   public makeSubGrid(el: GridItemHTMLElement, ops?: GridStackOptions, nodeToAdd?: GridStackNode, saveContent = true): GridStack {
@@ -547,7 +552,7 @@ export class GridStack {
       grid = grid.parentGridItem?.grid;
     }
     //... and set the create options
-    ops = Utils.cloneDeep({...(subGridTemplate || {}), children: undefined, ...(ops || node.subGridOpts)});
+    ops = Utils.cloneDeep({...(subGridTemplate || {}), children: undefined, ...(ops || node.subGridOpts || {})});
     node.subGridOpts = ops;
 
     // if column special case it set, remember that flag and set default
@@ -972,7 +977,7 @@ export class GridStack {
     // update the items now, checking if we have a custom children layout
     /*const newChildren = this.opts.columnOpts?.breakpoints?.find(r => r.c === column)?.children;
     if (newChildren) this.load(newChildren);
-    else*/ this.engine.columnChanged(oldColumn, column, undefined, layout);
+    else*/ this.engine.columnChanged(oldColumn, column, layout);
     if (this._isAutoCellHeight) this.cellHeight();
 
     this.resizeToContentCheck(true); // wait for width resizing
@@ -1141,7 +1146,12 @@ export class GridStack {
    * grid.el.addEventListener('added', function(event) { log('added ', event.detail)} );
    *
    */
-  public on(name: GridStackEvent, callback: GridStackEventHandlerCallback): GridStack {
+  public on(name: 'dropped', callback: GridStackDroppedHandler): GridStack
+  public on(name: 'enable' | 'disable', callback: GridStackEventHandler): GridStack
+  public on(name: 'change' | 'added' | 'removed' | 'resizecontent', callback: GridStackNodesHandler): GridStack
+  public on(name: 'resizestart' | 'resize' | 'resizestop' | 'dragstart' | 'drag' | 'dragstop', callback: GridStackElementHandler): GridStack
+  public on(name: string, callback: GridStackEventHandlerCallback): GridStack
+  public on(name: GridStackEvent | string, callback: GridStackEventHandlerCallback): GridStack {
     // check for array of names being passed instead
     if (name.indexOf(' ') !== -1) {
       let names = name.split(' ') as GridStackEvent[];
@@ -1188,10 +1198,10 @@ export class GridStack {
   }
 
   /**
-   * unsubscribe from the 'on' event below
-   * @param name of the event (see possible values)
+   * unsubscribe from the 'on' event GridStackEvent
+   * @param name of the event (see possible values) or list of names space separated
    */
-  public off(name: GridStackEvent): GridStack {
+  public off(name: GridStackEvent | string): GridStack {
     // check for array of names being passed instead
     if (name.indexOf(' ') !== -1) {
       let names = name.split(' ') as GridStackEvent[];
@@ -1212,7 +1222,7 @@ export class GridStack {
 
   /** remove all event handlers */
   public offAll(): GridStack {
-    Object.keys(this._gsEventHandler).forEach(key => this.off(key));
+    Object.keys(this._gsEventHandler).forEach((key: GridStackEvent) => this.off(key));
     return this;
   }
 
@@ -1597,6 +1607,8 @@ export class GridStack {
       Utils.addCSSRule(this._styles, content, `top: ${top}; right: ${right}; bottom: ${bottom}; left: ${left};`);
       Utils.addCSSRule(this._styles, placeholder, `top: ${top}; right: ${right}; bottom: ${bottom}; left: ${left};`);
       // resize handles offset (to match margin)
+      Utils.addCSSRule(this._styles, `${prefix} > .ui-resizable-n`, `top: ${top};`);
+      Utils.addCSSRule(this._styles, `${prefix} > .ui-resizable-s`, `bottom: ${bottom}`);
       Utils.addCSSRule(this._styles, `${prefix} > .ui-resizable-ne`, `right: ${right}`);
       Utils.addCSSRule(this._styles, `${prefix} > .ui-resizable-e`, `right: ${right}`);
       Utils.addCSSRule(this._styles, `${prefix} > .ui-resizable-se`, `right: ${right}; bottom: ${bottom}`);
@@ -2071,11 +2083,29 @@ export class GridStack {
       if (!node) return;
 
       helper = helper || el;
+
+      // if the element is being dragged from outside, scale it down to match the grid's scale
+      // and slightly adjust its position relative to the mouse
+      if (!node.grid?.el) {
+        // this scales the helper down
+        helper.style.transform = `scale(${1 / this.dragTransform.xScale},${1 / this.dragTransform.yScale})`;
+        // this makes it so that the helper is well positioned relative to the mouse after scaling
+        const helperRect = helper.getBoundingClientRect();
+        helper.style.left = helperRect.x + (this.dragTransform.xScale - 1) * (event.clientX - helperRect.x) / this.dragTransform.xScale + 'px';
+        helper.style.top = helperRect.y + (this.dragTransform.yScale - 1) * (event.clientY - helperRect.y) / this.dragTransform.yScale + 'px';
+        helper.style.transformOrigin = `0px 0px`
+      }
+
       let parent = this.el.getBoundingClientRect();
       let {top, left} = helper.getBoundingClientRect();
       left -= parent.left;
       top -= parent.top;
-      let ui: DDUIData = {position: {top, left}};
+      let ui: DDUIData = {
+        position: {
+          top: top * this.dragTransform.xScale,
+          left: left * this.dragTransform.yScale
+        }
+      };
 
       if (node._temporaryRemoved) {
         node.x = Math.max(0, Math.round(left / cellWidth));
@@ -2431,6 +2461,27 @@ export class GridStack {
     this.el.appendChild(this.placeholder);
     // console.log('_onStartMoving placeholder') // TEST
 
+    // if the element is inside a grid, it has already been scaled
+    // we can use that as a scale reference
+    if (node.grid?.el) {
+      this.dragTransform = Utils.getValuesFromTransformedElement(el);
+    }
+    // if the element is being dragged from outside (not from any grid)
+    // we use the grid as the transformation reference, since the helper is not subject to transformation
+    else if (this.placeholder && this.placeholder.closest('.grid-stack')) {
+      const gridEl = this.placeholder.closest('.grid-stack') as HTMLElement;
+      this.dragTransform = Utils.getValuesFromTransformedElement(gridEl);
+    }
+    // Fallback
+    else {
+      this.dragTransform = {
+        xScale: 1,
+        xOffset: 0,
+        yScale: 1,
+        yOffset: 0,
+      }
+    }
+
     node.el = this.placeholder;
     node._lastUiPosition = ui.position;
     node._prevYPix = ui.position.top;
@@ -2551,6 +2602,9 @@ export class GridStack {
     let node = el.gridstackNode;
     if (!node) return;
 
+    helper = helper || el;
+    // restore the scale of the helper on leave
+    helper.style.transform = 'scale(1)';
     dd.off(el, 'drag'); // no need to track while being outside
 
     // this gets called when cursor leaves and shape is outside, so only do this once
